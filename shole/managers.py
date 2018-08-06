@@ -10,7 +10,7 @@ from queue import Empty as EmptyQueue
 
 
 KILL = "CLOSE"
-SUCC = "DONE"
+DONE = "DONE"
 CZEC = "CHECK"
 
 
@@ -42,7 +42,7 @@ class ProcessHost(object):
                  running_check_delay=10000,
                  run_process=True,
                  host_to_process_signals=None,
-                 finished_signal=SUCC,
+                 finished_signal=DONE,
                  kill_signal=KILL,
                  check_signal=CZEC,
                  **process_kwarg_dict):
@@ -136,7 +136,7 @@ class SingleProcessHandler(Thread):
     """Manages single asynchronous processes - nothing in this object should be interacted with directly."""
     def __init__(self, process_target, to_handler_queue, handler_to_host_queue, *process_args,
                  handler_to_process_queue=None,
-                 finished_signal=SUCC,
+                 finished_signal=DONE,
                  kill_signal=KILL,
                  check_signal=CZEC,
                  host_to_process_signals=None,

@@ -7,13 +7,13 @@ import cv2
 
 
 KILL = "CLOSE"
-SUCC = "DONE"
+DONE = "DONE"
 QURY = "QUERY"
 SRCE = "SOURCE"
 
 
 def cam_process(return_queue, command_queue, frame_rate, cam_width, cam_height, *,
-                finished_signal=SUCC,
+                finished_signal=DONE,
                 kill_signal=KILL,
                 source_signal=SRCE,
                 command_signal=QURY,
