@@ -50,20 +50,11 @@ class SyncCam(object):
     :cvar str default_filetype: default file ending used in the example camera command for saving images.
     :cvar int default_width: default camera width to be used if modifying the camera frame dimensions.
     :cvar int default_height: default camera height to be used if modifying the camera frame dimensions.
-    :cvar default_font: default OpenCV font used when creating a dummy bad query message.
-    :cvar tuple default_fill_color: tuple of 3 ints used to determine the bad query text fill color.
-    :cvar tuple default_outline_color: tuple of 3 ints used to determine the bad query text outline color.
-    :cvar default_line_type: default font OpenCV line type used when creating a dummy bad query message.
     """
     default_camera_number = 0
     default_name = "SyncCam"
-    default_filetype = ".png"
     default_width = 800
     default_height = 600
-    default_font = cv2.FONT_HERSHEY_SIMPLEX
-    default_fill_color = (255, 255, 255)
-    default_outline_color = (0, 0, 0)
-    default_line_type = cv2.LINE_AA
 
     def __init__(self, command_queue, return_queue, frame_rate,
                  kill_signal, source_signal, command_signal, *,
@@ -298,7 +289,7 @@ class SyncCam(object):
         return video_capture, camera_number, replaced
 
     @staticmethod
-    def example_camera_command(live_frame, image_count, title, image_filetype=None):
+    def example_camera_command(live_frame, image_count, title, image_filetype='.png'):
         """
         Save an image from the camera feed in response to a queue command.
 
@@ -306,7 +297,7 @@ class SyncCam(object):
             :param numpy.array live_frame: the image pulled from the current camera.
             :param int image_count: the number of images already saved by this instance.
             :param str title: the file name prefix to be used when saving the current frame.
-            :param str or None image_filetype: the file name suffix to be used when saving the current frame.
+            :param str image_filetype: the file name suffix to be used when saving the current frame.
         :rtype: numpy.array
         :return numpy.array live_frame: the image pulled from the current camera.
         """
@@ -370,7 +361,14 @@ class SyncCam(object):
         """
         Prints horizontal or vertical striations with fill values at relative locations using function param.
 
-        TODO: params
+        :Parameters:
+            :param numpy.array image: the image to be striated.
+            :param tuple of floats relative_striation_points: tuple of floats in the range of (0, 1) determining
+                relative image locations to be striated horizontally.
+            :param int absolute_size: the length of image along the dimension to be striated.
+            :param list of tuple of ints fill_values: the fill values to be used in striation,
+                with a list of len(relative_striation_points) and tuples of the same length as image depth.
+            :param function assignment_function: striation function or method to be called per relative striation.
         :rtype: numpy.array
         :return numpy.array image: the image with striations applied.
         """
@@ -392,7 +390,11 @@ class SyncCam(object):
         """
         Prints a vertical striation. Called by _striate_image.
 
-        TODO: params
+        :Parameters:
+            :param numpy.array image: the image to be striated.
+            :param int start: the starting slice index for applying the fill value.
+            :param int stop: the stopping slice index for applying the fill value.
+            :param tuple of ints fill: tuple of ints of the same length as the image depth to be used as a fill value.
         :rtype: numpy.array
         :return numpy.array image: the image with a vertical striation applied.
         """
@@ -404,7 +406,11 @@ class SyncCam(object):
         """
         Prints a horizontal striation. Called by _striate_image.
 
-        TODO: params
+        :Parameters:
+            :param numpy.array image: the image to be striated.
+            :param int start: the starting slice index for applying the fill value.
+            :param int stop: the stopping slice index for applying the fill value.
+            :param tuple of ints fill: tuple of ints of the same length as the image depth to be used as a fill value.
         :rtype: numpy.array
         :return numpy.array image: the image with a horizontal striation applied.
         """
@@ -418,7 +424,18 @@ class SyncCam(object):
         """
         Places bad query text on image.
 
-        TODO: params
+        :Parameters:
+            :param numpy.array image: the image to have the bad query message written on it.
+            :param int image_width: the width of the image to be used for placing text. (Text is placed in center.)
+            :param int image_height: the height of the image to be used for placing text. (Text is placed in center.)
+            :param str message: the message to be written on image.
+            :param font: the OpenCV font to be used for writing message.
+            :param float font_scale: the font scale to be passed to cv2.putText and cv2.getTextSize.
+            :param tuple of (int,) * image depth fill_color: the text fill color to be used.
+            :param tuple of (int,) * image depth outline_color: the text outline color to be used.
+            :param int thickness: font thickness to be passed to cv2.putText and cv2.getTextSize.
+            :param int outline_thickness: font thickness to be used for the text outline in cv2.putText.
+            :param line_type: the OpenCV line type to be used for writing message.
         :rtype: numpy.array
         :return numpy.array image: the image with a bad query message overlaid on it.
         """
