@@ -15,7 +15,14 @@ CZEC = "CHECK"
 
 
 def clear_and_close_queues(*queues):
-    """Close an arbitrary-length tuple of multiprocessing and queue lib queue(s)."""
+    """
+    Close an arbitrary-length tuple of multiprocessing and queue lib queue(s).
+
+    :Parameters:
+        :param queues: queue.Queues and/or multiprocessing.Queues to be cleared and closed.
+    :rtype: None
+    :return: None
+    """
     for queue in queues:
         clear_queues(queue)
         try:
@@ -26,7 +33,14 @@ def clear_and_close_queues(*queues):
 
 
 def clear_queues(*queues):
-    """Remove remaining items in an arbitrary-length tuple of multiprocessing and queue lib queue(s)."""
+    """
+    Remove remaining items in an arbitrary-length tuple of multiprocessing and queue lib queue(s).
+
+    :Parameters:
+        :param queues: queue.Queues and/or multiprocessing.Queues to be cleared and closed.
+    :rtype: None
+    :return: None
+    """
     for queue in queues:
         try:
             while not queue.empty():
@@ -36,7 +50,13 @@ def clear_queues(*queues):
 
 
 class ProcessHost(object):
-    """Multiprocessing/threading object which can be accessed directly within libraries like Tkinter."""
+    """
+    Multiprocessing/threading object which can be accessed directly within libraries like Tkinter.
+
+    Send a target function to an instance of this class during __init__ or make_single_process_handler, and it will
+    ensure the process completes, and pass any queue return messages to the function provided in message_callback
+    during __init__.
+    """
     def __init__(self, root, message_callback, process_target=None, *process_args,
                  message_check_delay=1000,
                  running_check_delay=10000,
@@ -46,7 +66,24 @@ class ProcessHost(object):
                  kill_signal=KILL,
                  check_signal=CZEC,
                  **process_kwarg_dict):
-        """Create private inter-process communication for a potentially newly started process."""
+        """Create private inter-process communication for a potentially newly started process.
+
+        :Parameters:
+            :param Tkinter.Tk root: root / object with .after(delay, callback) used for scheduling.
+            :param function message_callback: function / method used to process a message if received.
+            :param function process_target: function / method to be run asynchronously.
+            :param process_args: positional arguments to be passed to process_target.
+            :param int message_check_delay: how often message checks are scheduled using root.
+            :param int running_check_delay: how often checks on whether the subprocess is running are run.
+            :param bool run_process: determines whether to run the process_target immediately after __init__.
+            :param dict host_to_process_signals: messages for the asynchronous process which may be sent to the handler.
+            :param str finished_signal: message to be used to indicate that the asynchronous process finished.
+            :param str kill_signal: message to be used to finish the asynchronous process early.
+            :param str check_signal: message to be used to check if the asynchronous process is still alive.
+            :param process_kwarg_dict: dictionary to be passed to process_target.
+        :rtype: None
+        :return: None
+        """
         self.root = root
         self.message_check_rate = message_check_delay
         self.running_check_delay = running_check_delay
@@ -63,30 +100,52 @@ class ProcessHost(object):
                 != self.check_signal
                 != self.finished_signal), "Use unique built-in queue signals."
         self.process_end_signals = {self.kill_signal, self.finished_signal, self.check_signal}
-        self.make_single_process_handler(process_target,
-                                         process_args=process_args,
-                                         host_to_process_signals=host_to_process_signals,
-                                         process_kwarg_dict=process_kwarg_dict)
+        if process_target is not None and run_process:
+            self.make_single_process_handler(process_target,
+                                             process_args=process_args,
+                                             host_to_process_signals=host_to_process_signals,
+                                             process_kwarg_dict=process_kwarg_dict)
 
     def make_single_process_handler(self, process_target, *process_args,
                                     host_to_process_signals=None,
                                     **process_kwarg_dict):
-        """Create a process handler and Tkinter threads for process callbacks."""
+        """
+        Create a process handler and Tkinter threads for process callbacks.
+
+        :Parameters:
+            :param function process_target: function / method to be run asynchronously.
+            :param process_args: positional arguments to be passed to process_target.
+            :param dict host_to_process_signals: messages for the asynchronous process which may be sent to the handler.
+            :param process_kwarg_dict: dictionary to be passed to process_target.
+        :rtype: None
+        :return: None
+        """
         _handler_to_process_queue = MultiQueue() if host_to_process_signals else None
-        self._current_processor(process_target,
-                                self._to_handler_queue,
-                                self._to_host_queue, process_args=process_args,
-                                handler_to_process_queue=_handler_to_process_queue,
-                                finished_signal=self.finished_signal,
-                                kill_signal=self.kill_signal,
-                                check_signal=self.check_signal,
-                                host_to_process_signals=host_to_process_signals,
-                                process_kwarg_dict=process_kwarg_dict).start()
+        self._continue_running = True
+        self._current_processor = SingleProcessHandler(process_target,
+                                                       self._to_handler_queue,
+                                                       self._to_host_queue, process_args=process_args,
+                                                       handler_to_process_queue=_handler_to_process_queue,
+                                                       finished_signal=self.finished_signal,
+                                                       kill_signal=self.kill_signal,
+                                                       check_signal=self.check_signal,
+                                                       host_to_process_signals=host_to_process_signals,
+                                                       process_kwarg_dict=process_kwarg_dict).start()
         self.root.after(self.message_check_rate, self.check_message)
         self.root.after(self.running_check_delay, self.check_running)
 
     def check_message(self, *, message_callback=None):
-        """Initiate callbacks from inter-process communication."""
+        """
+        Initiate callbacks from inter-process communication.
+
+        :Parameters:
+            :param function message_callback: function / method used to process a message if received. Currently
+                determines if check_message is subsequently called as well. If intending to check for a message
+                independent of the auto-check (and not intending to start another check_message thread chain)
+                pass self.message_callback or any other function as a parameter to prevent the check_message chain.
+        :rtype: None
+        :return: None
+        """
         if message_callback is None:
             say_check_one_more_time = self._continue_running
             message_callback = self.message_callback
@@ -112,7 +171,15 @@ class ProcessHost(object):
             self.kill_process()
 
     def kill_process(self, *, need_to_signal=True):
-        """End current process / clear queues."""
+        """
+        End current process / clear queues.
+
+        :Parameters:
+            :param bool need_to_signal: determines if a signal is sent to the process handler to end. Needs to be
+                True unless a signal has already been sent to the process handler.
+        :rtype: None
+        :return: None
+        """
         self._continue_running = False
         if (self._current_processor is not None
                 and self._current_processor.is_alive()):
@@ -124,7 +191,12 @@ class ProcessHost(object):
         self._current_processor = None
 
     def check_running(self):
-        """Maintain communication with subprocess to ensure it's running."""
+        """
+        Maintain communication with subprocess to ensure it's running.
+
+        :rtype: None
+        :return: None
+        """
         if (self._continue_running
                 and self._current_processor is not None
                 and self._current_processor.is_alive()):
@@ -141,7 +213,24 @@ class SingleProcessHandler(Thread):
                  check_signal=CZEC,
                  host_to_process_signals=None,
                  **process_kwarg_dict):
-        """Set runtime attributes for multi-process communication / management."""
+        """
+        Set runtime attributes for multi-process communication / management.
+
+        :Parameters:
+            :param function process_target: function / method to be run asynchronously.
+            :param multiprocessing.Queue to_handler_queue: queue for all communications sent to this class instance.
+            :param queue.Queue handler_to_host_queue: queue for communications to the host process from this instance.
+            :param process_args: positional arguments to be passed to process_target.
+            :param multiprocessing.Queue handler_to_process_queue: queue for communications from the host process
+                to the running asynchronous process_target.
+            :param str finished_signal: message to be used to indicate that the asynchronous process finished.
+            :param str kill_signal: message to be used to finish the asynchronous process early.
+            :param str check_signal: message to be used to check if the asynchronous process is still alive.
+            :param dict host_to_process_signals: messages for the asynchronous process which may be sent to the handler.
+            :param process_kwarg_dict: dictionary to be passed to process_target.
+        :rtype: None
+        :return: None
+        """
         Thread.__init__(self)
         self.host_to_process_signals = host_to_process_signals if host_to_process_signals else {}
         self.kill_signal = kill_signal
@@ -161,7 +250,15 @@ class SingleProcessHandler(Thread):
         self.handled_process = None
 
     def _import_process_args(self, process_args=None, process_kwarg_dict=None):
-        """Create the tuple of process args needed for multiprocessing.Process."""
+        """
+        Create the tuple of process args needed for multiprocessing.Process.
+
+        :Parameters:
+            :param process_args: positional arguments to be passed to process_target.
+            :param process_kwarg_dict: dictionary to be passed to process_target.
+        :rtype: None
+        :return: None
+        """
         if process_args and process_kwarg_dict:
             self.process_args = process_args + (process_kwarg_dict,)
         elif process_args:
@@ -170,20 +267,30 @@ class SingleProcessHandler(Thread):
             self.process_args = (process_kwarg_dict,)
 
     def run(self):
-        """Start / maintain process communication."""
+        """
+        Start / maintain process communication.
+
+        :rtype: None
+        :return: None
+        """
         self.handled_process = Process(target=self.process_target,
                                        args=self.process_args)
         self.handled_process.start()
         should_run = True
         while should_run:
-            should_run = self.process_queues()
+            should_run = self._process_queues()
 
-    def process_queues(self):
-        """Transmit / interpret signals between processes."""
+    def _process_queues(self):
+        """
+        Transmit / interpret signals between processes.
+
+        :rtype: bool
+        :return bool should_run: determine whether the run() loop should continue.
+        """
         should_run = True
         msg = self.to_handler_queue.get()
         if msg in self.end_sigs:
-            self.kill_process()
+            self._kill_process()
             self.handler_to_host_queue.put(msg)
             should_run = False
         elif msg == self.check_signal:
@@ -196,8 +303,13 @@ class SingleProcessHandler(Thread):
             self.handler_to_host_queue.put(msg)
         return should_run
 
-    def kill_process(self):
-        """Handle queue / process cleanup for end-process signals."""
+    def _kill_process(self):
+        """
+        Handle queue / process cleanup for end-process signals.
+
+        :rtype: None
+        :return: None
+        """
         if self.handled_process is not None:
             if self.handler_to_process_queue:
                 self._okay_maybe_some_tears_but_be_quick()
@@ -206,7 +318,12 @@ class SingleProcessHandler(Thread):
             self.handled_process = None
 
     def _okay_maybe_some_tears_but_be_quick(self):
-        """Close process while allowing for one to-process-queue signal for cleanup."""
+        """
+        Close process while allowing for one to-process-queue signal for cleanup.
+
+        :rtype: None
+        :return: None
+        """
         self.handler_to_process_queue.put(self.kill_signal)
         self.handler_to_process_queue = None
         while True:
@@ -218,7 +335,12 @@ class SingleProcessHandler(Thread):
 
     @classmethod
     def _shh_no_more_tears(cls, process, queue_process_populates):
-        """Close process without queue signal for cleanup."""
+        """
+        Close process without queue signal for cleanup.
+
+        :rtype: None
+        :return: None
+        """
         if process.is_alive():
             process.terminate()
             clear_and_close_queues(queue_process_populates)
@@ -228,7 +350,18 @@ class SingleProcessHandler(Thread):
 class PoolProcessHandler(Thread):
     """Manages pool'd asynchronous processes."""
     def __init__(self, run_target, return_queue, pool_args, *, pool_size=4, time_limit=15):
-        """Set runtime attributes for a pooled multiprocessing application."""
+        """
+        Set runtime attributes for a pooled multiprocessing application.
+
+        :Parameters:
+            :param function run_target: function / method to be run asynchronously - called once per pool_arg.
+            :param queue.Queue return_queue: queue to return the results of run_target(s).
+            :param list pool_args: list of objects to be mapped to run_target instances.
+            :param int or None pool_size: number of sub-processes to be mapped to run_target.
+            :param int or None time_limit: amount of time to await the results of run_target.
+        :rtype: None
+        :return: None
+        """
         Thread.__init__(self)
         self.run_target = run_target
         self.return_queue = return_queue
@@ -237,7 +370,12 @@ class PoolProcessHandler(Thread):
         self.pool_size = pool_size
 
     def run(self):
-        """Start pool'd process and return results using queue from __init__."""
+        """
+        Start pool'd process and return results using queue from __init__.
+
+        :rtype: None
+        :return: None
+        """
         with Pool(self.pool_size) as pool:
             result = pool.map_async(self.run_target, self.pool_args)
             try:
