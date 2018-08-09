@@ -4,12 +4,7 @@
 from time import sleep
 import numpy as np
 import cv2
-
-
-KILL = "CLOSE"
-DONE = "DONE"
-QURY = "QUERY"
-SRCE = "SOURCE"
+from constants import KILL, DONE, QURY, SRCE
 
 
 def cam_process(return_queue, command_queue, frame_rate, cam_width=None, cam_height=None, *,
