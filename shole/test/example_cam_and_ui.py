@@ -20,7 +20,12 @@ BASE_LABELSTYLE = 'Normal.TLabel'
 class MainRoot(Tk):
     """Test application for cam + interface."""
     def __init__(self):
-        """Test application init."""
+        """
+        Test application init.
+
+        :rtype: None
+        :return: None
+        """
         Tk.__init__(self)
         self.camera_controller = None
         self.geometry(ROOTOMETRY)
@@ -185,7 +190,12 @@ class MainRoot(Tk):
 
 
 def run_example_cam():
-    """Create and start the test application."""
+    """
+    Create and start the test application.
+
+    :rtype: None
+    :return: None
+    """
     root = MainRoot()
     root.mainloop()
 
