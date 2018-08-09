@@ -7,7 +7,7 @@ import cv2
 from constants import KILL, DONE, QURY, SRCE
 
 
-def cam_process(return_queue, command_queue, frame_rate, cam_width=None, cam_height=None, *,
+def cam_process(return_queue, command_queue, frame_rate=0.015, cam_width=None, cam_height=None, *,
                 finished_signal=DONE,
                 kill_signal=KILL,
                 source_signal=SRCE,
@@ -19,7 +19,7 @@ def cam_process(return_queue, command_queue, frame_rate, cam_width=None, cam_hei
     :Parameters:
         :param multiprocessing.Queue return_queue: queue for all communications to the host process.
         :param multiprocessing.Queue command_queue: queue for communications from the host process to this process.
-        :param int frame_rate: determines how often a frame is pulled from the camera.
+        :param float frame_rate: determines how often a frame is pulled from the camera.
         :param int cam_width: determines how wide the camera frame is if set_cam_dimensions is True.
         :param int cam_height: determines how tall the camera frame is if set_cam_dimensions is True.
         :param str finished_signal: message to be used to indicate that this process finished.
@@ -60,7 +60,7 @@ class SyncCam(object):
         :Parameters:
             :param multiprocessing.Queue command_queue: queue for communications from the host process to this process.
             :param multiprocessing.Queue return_queue: queue for all communications to the host process.
-            :param int frame_rate: determines how often a frame is pulled from the camera.
+            :param float frame_rate: determines how often a frame is pulled from the camera by seconds per frame.
             :param str kill_signal: message to be used to finish this process early.
             :param str source_signal: message to be used to change the camera source.
             :param str command_signal: message to be used to trigger a predetermined process on a camera frame.
@@ -105,6 +105,7 @@ class SyncCam(object):
         while True:
             if not self.command_queue.empty():
                 msg = self.command_queue.get()
+                # print("{} for cam.".format(msg))
                 should_close = self.react(msg)
                 if should_close:
                     break
@@ -299,7 +300,7 @@ class SyncCam(object):
         if live_frame is None:
             raise ValueError
         else:
-            save_name = ''.join((title, "_", str(image_count), image_filetype))
+            save_name = ''.join(('./', title, "_", str(image_count), image_filetype))
             cv2.imwrite(save_name, live_frame)
         return live_frame
 

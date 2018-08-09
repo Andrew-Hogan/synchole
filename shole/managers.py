@@ -33,7 +33,7 @@ def clear_queues(*queues):
     Remove remaining items in an arbitrary-length tuple of multiprocessing and queue lib queue(s).
 
     :Parameters:
-        :param queues: queue.Queues and/or multiprocessing.Queues to be cleared and closed.
+        :param queues: queue.Queues and/or multiprocessing.Queues to be cleared.
     :rtype: None
     :return: None
     """
@@ -72,7 +72,7 @@ class ProcessHost(object):
             :param int message_check_delay: how often message checks are scheduled using root.
             :param int running_check_delay: how often checks on whether the subprocess is running are run.
             :param bool run_process: determines whether to run the process_target immediately after __init__.
-            :param dict host_to_process_signals: messages for the asynchronous process which may be sent to the handler.
+            :param set host_to_process_signals: messages for the asynchronous process which may be sent to the handler.
             :param str finished_signal: message to be used to indicate that the asynchronous process finished.
             :param str kill_signal: message to be used to finish the asynchronous process early.
             :param str check_signal: message to be used to check if the asynchronous process is still alive.
@@ -112,7 +112,7 @@ class ProcessHost(object):
         :Parameters:
             :param function process_target: function / method to be run asynchronously.
             :param process_args: positional arguments to be passed to process_target.
-            :param dict host_to_process_signals: messages for the asynchronous process which may be sent to the handler.
+            :param set host_to_process_signals: messages for the asynchronous process which may be sent to the handler.
             :param process_kwarg_dict: dictionary to be passed to process_target.
         :rtype: None
         :return: None
@@ -130,7 +130,8 @@ class ProcessHost(object):
                                                        kill_signal=self.kill_signal,
                                                        check_signal=self.check_signal,
                                                        host_to_process_signals=host_to_process_signals,
-                                                       **process_kwarg_dict).start()
+                                                       **process_kwarg_dict)
+        self._current_processor.start()
         self.root.after(self.message_check_rate, self.check_message)
         self.root.after(self.running_check_delay, self.check_running)
 
@@ -170,6 +171,7 @@ class ProcessHost(object):
                     pass
                 else:
                     if isinstance(msg, str):
+                        # print("{} for host.".format(msg))
                         if msg in self.process_end_signals:
                             say_check_one_more_time = False
                             self.kill_process(need_to_signal=False)
@@ -222,21 +224,21 @@ class GreedyProcessHost(ProcessHost):
     Multiprocessing/threading object which can be accessed directly within libraries like Tkinter.
 
     Send a target function to an instance of this class during __init__ or make_single_process_handler, and it will
-    ensure the process completes, and pass any queue return messages to the function provided in message_callback
-    during __init__.
+    ensure the process completes, and pass the most recent queue return messages to the function provided in
+    message_callback during __init__ - while keeping the rest to itself. (Rude.)
     """
     def __init__(self, *args, **kwargs):
         """Create private inter-process communication for a potentially newly started process.
 
         :Parameters:
             :param Tkinter.Tk root: root / object with .after(delay, callback) used for scheduling.
-            :param function message_callback: function / method used to process a message if received.
+            :param function message_callback: function / method used to process the most recent message if received.
             :param function process_target: function / method to be run asynchronously.
             :param process_args: positional arguments to be passed to process_target.
             :param int message_check_delay: how often message checks are scheduled using root.
             :param int running_check_delay: how often checks on whether the subprocess is running are run.
             :param bool run_process: determines whether to run the process_target immediately after __init__.
-            :param dict host_to_process_signals: messages for the asynchronous process which may be sent to the handler.
+            :param set host_to_process_signals: messages for the asynchronous process which may be sent to the handler.
             :param str finished_signal: message to be used to indicate that the asynchronous process finished.
             :param str kill_signal: message to be used to finish the asynchronous process early.
             :param str check_signal: message to be used to check if the asynchronous process is still alive.
@@ -274,6 +276,7 @@ class GreedyProcessHost(ProcessHost):
                     pass
                 else:
                     if isinstance(msg, str):
+                        # print("{} for greedy host.".format(msg))
                         if msg in self.process_end_signals:
                             say_check_one_more_time = False
                             self.kill_process(need_to_signal=False)
@@ -309,7 +312,7 @@ class SingleProcessHandler(Thread):
             :param str finished_signal: message to be used to indicate that the asynchronous process finished.
             :param str kill_signal: message to be used to finish the asynchronous process early.
             :param str check_signal: message to be used to check if the asynchronous process is still alive.
-            :param dict host_to_process_signals: messages for the asynchronous process which may be sent to the handler.
+            :param set host_to_process_signals: messages for the asynchronous process which may be sent to the handler.
             :param process_kwarg_dict: dictionary to be passed to process_target.
         :rtype: None
         :return: None
@@ -382,6 +385,7 @@ class SingleProcessHandler(Thread):
         should_run = True
         msg = self.to_handler_queue.get()
         if isinstance(msg, str):
+            # print("{} for handler.".format(msg))
             if msg in self.end_sigs:
                 self._kill_process()
                 self.handler_to_host_queue.put(msg)

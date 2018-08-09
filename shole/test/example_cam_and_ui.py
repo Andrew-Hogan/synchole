@@ -2,17 +2,16 @@ import sys
 from tkinter import font
 from tkinter import ttk
 from tkinter import *
-sys.path.append("..")
-sys.path.append("/usr/local/lib/python3.6/site-packages/")
 from PIL import ImageTk, Image
 import cv2
-print(sys.path)
+sys.path.append("..")
+# from shole import QURY, SRCE, cam_process, GreedyProcessHost
 
 from constants import QURY, SRCE
 from drones import cam_process
 from managers import GreedyProcessHost
 
-ROOTOMETRY = "800x475+200+10"
+ROOTOMETRY = "800x600+200+10"
 BASE_FRAMESTYLE = 'Normal.TFrame'
 BASE_LABELSTYLE = 'Normal.TLabel'
 
@@ -32,6 +31,7 @@ class MainRoot(Tk):
         self.option_add('*tearOff', False)
         self.current_processor = None
         self.wm_protocol("WM_DELETE_WINDOW", self.on_close)
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.master_window = None
         self.image_display = None
         self.current_tkimage = None
@@ -71,8 +71,8 @@ class MainRoot(Tk):
         """
         # Start async process.
         self.current_processor = GreedyProcessHost(self, self._message_callback,
-                                                   cam_process, 25,
-                                                   message_check_delay=40,
+                                                   cam_process, 0.015,
+                                                   message_check_delay=15,
                                                    host_to_process_signals={self.source_signal,
                                                                             self.command_signal})
 
