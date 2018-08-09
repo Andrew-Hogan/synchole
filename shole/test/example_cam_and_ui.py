@@ -18,7 +18,9 @@ BASE_LABELSTYLE = 'Normal.TLabel'
 
 
 class MainRoot(Tk):
+    """Test application for cam + interface."""
     def __init__(self):
+        """Test application init."""
         Tk.__init__(self)
         self.camera_controller = None
         self.geometry(ROOTOMETRY)
@@ -34,16 +36,34 @@ class MainRoot(Tk):
         self.make_application_window()
 
     def should_interact(self):
+        """
+        Determines if a process host interaction would behave as expected.
+
+        :rtype: bool
+        :return bool: True if can interact, False if cannot interact.
+        """
         if self.current_processor and self.current_processor.is_running:
             return True
         return False
 
     def on_close(self):
+        """
+        Clean-up processes before closing the program exits.
+
+        :rtype: None
+        :return: None
+        """
         if self.should_interact():
             self.current_processor.kill_process()
         self.destroy()
 
     def make_application_window(self):
+        """
+        Setup application display and interface.
+
+        :rtype: None
+        :return: None
+        """
         # Start async process.
         self.current_processor = GreedyProcessHost(self, self._message_callback,
                                                    cam_process, 25,
@@ -81,6 +101,14 @@ class MainRoot(Tk):
         query_button.pack(side=RIGHT, expand=FALSE, fill=None, pady=10)
 
     def _message_callback(self, msg):
+        """
+        Callback triggered by a communication from the asynchronous camera process.
+
+        :Parameters:
+            :param str or np.array msg: the message from the camera process, which may be a signal or image.
+        :rtype: None
+        :return: None
+        """
         if isinstance(msg, str):
             print("{} message received from process.".format(msg))
         else:
@@ -89,26 +117,61 @@ class MainRoot(Tk):
 
     @staticmethod
     def cv2_np_array_to_pil_image(image):
+        """
+        Convert a cv2 np.array into a pillow image.
+
+        :Parameters:
+            :param np.array image: the cv2 image to be converted.
+        :rtype: pillow.Image
+        :return pillow.Image pil_image: the resulting converted image.
+        """
         cv2image = cv2.cvtColor(image, cv2.COLOR_BGR2RGBA)
         pil_image = Image.fromarray(cv2image)
         return pil_image
 
     def update_image_display(self, image):
+        """
+        Change the currently displayed image to the supplied image.
+
+        :Parameters:
+            :param image: the image used to replace the currently displayed image.
+        :rtype: None
+        :return: None
+        """
         self.current_tkimage = photoimage = ImageTk.PhotoImage(image)
         self.image_display.imgtk = photoimage
         self.image_display.configure(image=photoimage)
 
     def _source_button_callback(self):
+        """
+        Callback triggered by the source button for changing camera sources.
+
+        :rtype: None
+        :return: None
+        """
         if self.should_interact():
             self.current_processor.send_signal(self.source_signal)
 
     def _query_button_callback(self):
+        """
+        Callback triggered by the query button for triggering camera events.
+
+        :rtype: None
+        :return: None
+        """
         if self.should_interact():
             self.current_processor.send_signal(self.command_signal)
 
-
     @staticmethod
     def set_base_styles(style_object):
+        """
+        Setup style attributes for common classes.
+
+        :Parameters:
+            :param ttk.Style style_object: tkinter.ttk.Style() used to configure style attributes.
+        :rtype: None
+        :return: None
+        """
         defont = font.Font(family="Bookman Old Style", size=16, weight="normal")
         normal_attrs = {'anchor': CENTER, 'background': "#e4e2e0", 'foreground': "#f1f1f1",
                         'font': defont, 'relief': FLAT, 'borderwidth': 0, 'padding': (0, 0, 0, 0),
@@ -122,6 +185,7 @@ class MainRoot(Tk):
 
 
 def run_example_cam():
+    """Create and start the test application."""
     root = MainRoot()
     root.mainloop()
 
