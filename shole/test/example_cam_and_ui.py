@@ -12,6 +12,8 @@ from drones import cam_process
 from managers import GreedyProcessHost
 
 ROOTOMETRY = "800x600+200+10"
+MIN_W = 630
+MIN_H = 540
 BASE_FRAMESTYLE = 'Normal.TFrame'
 BASE_LABELSTYLE = 'Normal.TLabel'
 
@@ -39,6 +41,7 @@ class MainRoot(Tk):
         self.source_signal = SRCE
         self.command_signal = QURY
         self.make_application_window()
+        self.minsize(MIN_W, MIN_H)
 
     def should_interact(self):
         """
@@ -51,9 +54,9 @@ class MainRoot(Tk):
             return True
         return False
 
-    def on_close(self):
+    def on_close(self, *_):
         """
-        Clean-up processes before closing the program exits.
+        Clean-up processes before the program exits.
 
         :rtype: None
         :return: None
@@ -89,21 +92,21 @@ class MainRoot(Tk):
         display_frame = ttk.Frame(master_window, style=BASE_FRAMESTYLE)
 
         interface_frame.grid(column=0, row=2, rowspan=1, columnspan=1, sticky=(N, W, E, S))
-        display_frame.grid(column=0, row=0, rowspan=2, columnspan=1, sticky=(N, W, E, S))
+        display_frame.grid(column=0, row=0, rowspan=2, columnspan=1, sticky=(N, W, E))
 
         master_window.grid_columnconfigure(0, weight=1)
         master_window.grid_rowconfigure(list(range(3)), weight=1, uniform="ROW_H_RT")
-
-        # Video display.
-        self.image_display = ttk.Label(display_frame, style=BASE_LABELSTYLE)
-        self.image_display.pack(side=TOP, fill=BOTH, expand=TRUE)
 
         # Application interface.
         source_button = ttk.Button(interface_frame, command=self._source_button_callback, text="Source")
         query_button = ttk.Button(interface_frame, command=self._query_button_callback, text="Command")
 
-        source_button.pack(side=LEFT, expand=FALSE, fill=None, pady=10)
-        query_button.pack(side=RIGHT, expand=FALSE, fill=None, pady=10)
+        source_button.pack(side=LEFT, expand=TRUE, fill=BOTH, pady=10)
+        query_button.pack(side=RIGHT, expand=TRUE, fill=BOTH, pady=10)
+
+        # Video display.
+        self.image_display = ttk.Label(display_frame, style=BASE_LABELSTYLE)
+        self.image_display.pack(side=TOP, fill=BOTH, expand=TRUE)
 
     def _message_callback(self, msg):
         """
@@ -116,6 +119,7 @@ class MainRoot(Tk):
         """
         if isinstance(msg, str):
             print("{} message received from process.".format(msg))
+            self.on_close()  # Note: Signal message currently only relayed during running-check failure.
         else:
             converted = self.cv2_np_array_to_pil_image(msg)
             self.update_image_display(converted)

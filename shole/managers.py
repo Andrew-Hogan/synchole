@@ -95,7 +95,7 @@ class ProcessHost(object):
         assert (self.kill_signal
                 != self.finished_signal
                 != self.check_signal
-                != self.finished_signal), "Use unique built-in queue signals."
+                != self.kill_signal), "Use unique built-in queue signals."
         self.process_end_signals = {self.kill_signal, self.finished_signal, self.check_signal}
         if process_target is not None and run_process:
             self.make_single_process_handler(process_target,
