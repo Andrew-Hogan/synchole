@@ -178,6 +178,8 @@ class SyncCam(object):
                         image_height = self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
                         processed_image = self.generate_bad_query_image(image_width, image_height,
                                                                         query_message="BAD QUERY")
+                    else:
+                        self.image_count += 1
                 else:
                     image_width = self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH)
                     image_height = self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
