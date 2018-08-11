@@ -42,12 +42,13 @@ class SyncCam(object):
 
     :cvar int default_camera_number: starting camera source number.
     :cvar str default_name: default value for self.title used in the example camera command for file save names.
-    :cvar str default_filetype: default file ending used in the example camera command for saving images.
+    :cvar str default_save_loc: default file directory used in the example camera command for saving images.
     :cvar int default_width: default camera width to be used if modifying the camera frame dimensions.
     :cvar int default_height: default camera height to be used if modifying the camera frame dimensions.
     """
     default_camera_number = 0
     default_name = "SyncCam"
+    default_save_loc = "./"
     default_width = 800
     default_height = 600
 
@@ -69,6 +70,7 @@ class SyncCam(object):
         :return: None
         """
         self.title = self.__class__.default_name
+        self.save_location = self.__class__.default_save_loc
         self.camera_number = self.__class__.default_camera_number
         self.video_capture = None
         self.image_count = 0
@@ -172,7 +174,10 @@ class SyncCam(object):
                 if self.video_capture.isOpened():
                     rval, frame = self.video_capture.read()
                     try:
-                        processed_image = self.example_camera_command(frame, self.image_count, self.title)
+                        processed_image = self.example_camera_command(frame,
+                                                                      self.image_count,
+                                                                      self.save_location,
+                                                                      self.title)
                     except ValueError:
                         image_width = self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH)
                         image_height = self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -287,13 +292,14 @@ class SyncCam(object):
         return video_capture, camera_number, replaced
 
     @staticmethod
-    def example_camera_command(live_frame, image_count, title, image_filetype='.png'):
+    def example_camera_command(live_frame, image_count, save_loc, title, image_filetype='.png'):
         """
         Save an image from the camera feed in response to a queue command.
 
         :Parameters:
             :param numpy.array live_frame: the image pulled from the current camera.
             :param int image_count: the number of images already saved by this instance.
+            :param str save_loc: the file save location to be used when saving the current frame.
             :param str title: the file name prefix to be used when saving the current frame.
             :param str image_filetype: the file name suffix to be used when saving the current frame.
         :rtype: numpy.array
@@ -302,7 +308,7 @@ class SyncCam(object):
         if live_frame is None:
             raise ValueError
         else:
-            save_name = ''.join(('./', title, "_", str(image_count), image_filetype))
+            save_name = ''.join((save_loc, title, "_", str(image_count), image_filetype))
             cv2.imwrite(save_name, live_frame)
         return live_frame
 
